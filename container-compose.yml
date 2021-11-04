@@ -1,0 +1,16 @@
+version: '3'
+services:
+
+  quarkus-todo-db:
+    image: 'postgres:13.1'
+    environment:
+      POSTGRES_USER: restcrud
+      POSTGRES_PASSWORD: restcrud
+      POSTGRES_DB: rest-crud
+    ports:
+      - 5432:5432
+
+  quarkus-todo-backend:
+    image: 'quay.io/andrewazores/quarkus-todo:latest'
+    ports:
+      - 8080:8080
