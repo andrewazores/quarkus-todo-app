@@ -11,6 +11,6 @@ services:
       - 5432:5432
 
   quarkus-todo-backend:
-    image: 'quay.io/andrewazores/quarkus-todo:latest'
+    image: 'quarkus-todo:latest'
     ports:
       - 8080:8080
