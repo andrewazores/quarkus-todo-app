@@ -16,6 +16,8 @@ Where `$VARIANT` is `quarkus-todo` or `quarkus-todo-reactive`.
 ## Imperative Application
 
 ```bash
+podman-compose -f database-compose.yml run --rm quarkus-todo-db
+# in another terminal
 cd quarkus-todo
 mvn compile quarkus:dev
 ```
@@ -27,6 +29,8 @@ Open: http://localhost:8080/
 This version uses Hibernate Reactive, RESTEasy Reactive and Mutiny.
 
 ```bash
+podman-compose -f database-compose.yml run --rm quarkus-todo-db
+# in another terminal
 cd quarkus-todo-reactive
 mvn compile quarkus:dev
 ```
