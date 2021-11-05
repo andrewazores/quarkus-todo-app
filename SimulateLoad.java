@@ -53,7 +53,6 @@ public class SimulateLoad {
         }
 
         executor.shutdown();
-        executor.awaitTermination(1, TimeUnit.MINUTES);
     }
 
     static void createTodo(String url) throws Exception {
