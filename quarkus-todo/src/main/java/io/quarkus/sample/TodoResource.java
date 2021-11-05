@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import javax.inject.Inject;
 import javax.transaction.Transactional;
 import javax.validation.Valid;
 import javax.ws.rs.Consumes;
@@ -27,6 +28,8 @@ import io.quarkus.panache.common.Sort;
 @Consumes("application/json")
 public class TodoResource {
 
+    @Inject TodoLogger logger;
+
     @OPTIONS
     public Response opt() {
         return Response.ok().build();
@@ -47,6 +50,7 @@ public class TodoResource {
     @POST
     @Transactional
     public Response create(@Valid Todo item) {
+        logger.log("Creating TODO: " + item.title);
         boolean alreadyExists = false;
         for (Todo todo : Todo.<Todo>listAll()) {
             if (Objects.equals(item.id, todo.id)) {
@@ -57,6 +61,7 @@ public class TodoResource {
             throw new WebApplicationException(400);
         }
         item.persist();
+        logger.log(String.format("Created TODO<%d>: %s", item.id, item.title));
         return Response.status(Status.CREATED).entity(item).build();
     }
 
@@ -84,10 +89,12 @@ public class TodoResource {
     @Transactional
     @Path("/{id}")
     public Response deleteOne(@PathParam("id") Long id) {
+        logger.log("Deleting ID: " + id);
         for (Todo todo : Todo.<Todo>listAll()) {
             if (Objects.equals(id, todo.id)) {
                 todo.delete();
                 todo.flush();
+                logger.log("Deleted ID: " + id);
             }
         }
         return Response.noContent().build();
