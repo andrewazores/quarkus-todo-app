@@ -1,13 +1,24 @@
 package io.quarkus.sample;
 
-import io.quarkus.panache.common.Sort;
+import java.util.List;
+import java.util.Optional;
 
 import javax.transaction.Transactional;
 import javax.validation.Valid;
-import javax.ws.rs.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.OPTIONS;
+import javax.ws.rs.PATCH;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import java.util.List;
+
+import io.quarkus.panache.common.Sort;
 
 
 @Path("/api")
@@ -28,11 +39,8 @@ public class TodoResource {
     @GET
     @Path("/{id}")
     public Todo getOne(@PathParam("id") Long id) {
-        Todo entity = Todo.findById(id);
-        if (entity == null) {
-            throw new WebApplicationException("Todo with id of " + id + " does not exist.", Status.NOT_FOUND);
-        }
-        return entity;
+        Optional<Todo> entity = Todo.findByIdOptional(id);
+        return entity.orElseThrow(() -> new WebApplicationException("Todo with id of " + id + " does not exist.", Status.NOT_FOUND));
     }
 
     @POST
@@ -66,12 +74,9 @@ public class TodoResource {
     @Transactional
     @Path("/{id}")
     public Response deleteOne(@PathParam("id") Long id) {
-        Todo entity = Todo.findById(id);
-        if (entity == null) {
-            throw new WebApplicationException("Todo with id of " + id + " does not exist.", Status.NOT_FOUND);
-        }
-        entity.delete();
-        return Response.noContent().build();
+        Optional<Todo> entity = Todo.findByIdOptional(id);
+        entity.ifPresent(Todo::delete);
+        return entity.map(todo -> Response.noContent().build()).orElseThrow(() -> new WebApplicationException("Todo with id of " + id + " does not exist.", Status.NOT_FOUND));
     }
 
 }
