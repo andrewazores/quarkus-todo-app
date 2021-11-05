@@ -13,6 +13,10 @@ podman-compose down # stop and clean up services in Podman
 
 Where `$VARIANT` is `quarkus-todo` or `quarkus-todo-reactive`.
 
+```java
+jbang SimulateLoad.java http://localhost:8080 10
+```
+
 ## Imperative Application
 
 ```bash
