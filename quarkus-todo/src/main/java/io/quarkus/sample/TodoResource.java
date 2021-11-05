@@ -1,6 +1,7 @@
 package io.quarkus.sample;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import javax.transaction.Transactional;
@@ -46,6 +47,15 @@ public class TodoResource {
     @POST
     @Transactional
     public Response create(@Valid Todo item) {
+        boolean alreadyExists = false;
+        for (Todo todo : Todo.<Todo>listAll()) {
+            if (Objects.equals(item.id, todo.id)) {
+                alreadyExists = alreadyExists || true;
+            }
+        }
+        if (alreadyExists) {
+            throw new WebApplicationException(400);
+        }
         item.persist();
         return Response.status(Status.CREATED).entity(item).build();
     }
@@ -74,9 +84,16 @@ public class TodoResource {
     @Transactional
     @Path("/{id}")
     public Response deleteOne(@PathParam("id") Long id) {
-        Optional<Todo> entity = Todo.findByIdOptional(id);
-        entity.ifPresent(Todo::delete);
-        return entity.map(todo -> Response.noContent().build()).orElseThrow(() -> new WebApplicationException("Todo with id of " + id + " does not exist.", Status.NOT_FOUND));
+        for (Todo todo : Todo.<Todo>listAll()) {
+            if (Objects.equals(id, todo.id)) {
+                todo.delete();
+                todo.flush();
+            }
+        }
+        return Response.noContent().build();
+        // Optional<Todo> entity = Todo.findByIdOptional(id);
+        // entity.ifPresent(Todo::delete);
+        // return entity.map(todo -> Response.noContent().build()).orElseThrow(() -> new WebApplicationException("Todo with id of " + id + " does not exist.", Status.NOT_FOUND));
     }
 
 }
