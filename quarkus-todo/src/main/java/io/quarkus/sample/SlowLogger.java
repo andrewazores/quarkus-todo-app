@@ -17,7 +17,7 @@ class SlowLogger implements TodoLogger {
     public synchronized void log(String s) {
         try {
             double sample = dist.sample();
-            Thread.sleep(Math.round(1_000 * sample));
+            Thread.sleep(Math.round(250 * sample));
         } catch (Exception e) {
             e.printStackTrace();
         }
