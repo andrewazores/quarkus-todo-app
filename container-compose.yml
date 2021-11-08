@@ -2,15 +2,50 @@ version: '3'
 services:
 
   quarkus-todo-db:
+    hostname: quarkus-todo-db
     image: 'postgres:13.1'
     environment:
       POSTGRES_USER: restcrud
       POSTGRES_PASSWORD: restcrud
       POSTGRES_DB: rest-crud
-    ports:
-      - 5432:5432
 
   quarkus-todo-backend:
+    hostname: quarkus-todo
     image: 'quarkus-todo:latest'
     ports:
       - 8080:8080
+    environment:
+      JAVA_OPTS_APPEND: >-
+        -Dquarkus.http.host=0.0.0.0
+        -Djava.util.logging.manager=org.jboss.logmanager.LogManager
+        -Dcom.sun.management.autodiscovery=true
+        -Dcom.sun.management.jmxremote.port=9999
+        -Dcom.sun.management.jmxremote.rmi.port=9999
+        -Dcom.sun.management.jmxremote.authenticate=false
+        -Dcom.sun.management.jmxremote.ssl=false
+
+  cryostat:
+    hostname: cryostat
+    image: 'quay.io/cryostat/cryostat:latest'
+    ports:
+      - 8181:8181
+    environment:
+      CRYOSTAT_WEB_HOST: 0.0.0.0
+      CRYOSTAT_WEB_PORT: 8181
+      CRYOSTAT_CONFIG_PATH: '/opt/cryostat.d/conf.d'
+      CRYOSTAT_ARCHIVE_PATH: '/opt/cryostat.d/recordings.d'
+      CRYOSTAT_TEMPLATE_PATH: '/opt/cryostat.d/templates.d'
+      CRYOSTAT_CLIENTLIB_PATH: '/clientlib'
+    volumes:
+      - target: /opt/cryostat.d/recordings.d
+        type: tmpfs
+      - target: /certs
+        type: tmpfs
+      - target: /clientlib
+        type: tmpfs
+      - target: /opt/cryostat.d/conf.d
+        type: tmpfs
+      - target: /opt/cryostat.d/templates.d
+        type: tmpfs
+      - target: /truststore
+        type: tmpfs
