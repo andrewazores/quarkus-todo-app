@@ -15,7 +15,7 @@ import io.quarkus.arc.Lock;
 
 @Lock
 @ApplicationScoped
-class SlowLogger implements TodoLogger {
+class TodoLoggerImpl implements TodoLogger {
 
     private static final int POOL_SIZE = 2;
     private static final RealDistribution dist = new BetaDistribution(0.5, 0.5);
@@ -23,7 +23,7 @@ class SlowLogger implements TodoLogger {
     private final ExecutorService service = Executors.newWorkStealingPool(POOL_SIZE);
     private final ReentrantLock qlock = new ReentrantLock(true);
 
-    SlowLogger() {
+    TodoLoggerImpl() {
         for (int i = 0; i < POOL_SIZE; i++) {
             this.service.submit(() -> {
                 while (true) {
