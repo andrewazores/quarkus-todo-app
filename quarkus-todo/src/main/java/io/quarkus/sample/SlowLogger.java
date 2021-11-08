@@ -1,5 +1,10 @@
 package io.quarkus.sample;
 
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 import javax.enterprise.context.ApplicationScoped;
 
 import org.apache.commons.math3.distribution.BetaDistribution;
@@ -12,16 +17,30 @@ import io.quarkus.arc.Lock;
 class SlowLogger implements TodoLogger {
 
     private static final RealDistribution dist = new BetaDistribution(0.5, 0.5);
+    private final BlockingQueue<String> q = new ArrayBlockingQueue<>(64);
+    private final ExecutorService service = Executors.newWorkStealingPool(2);
+
+    SlowLogger() {
+        this.service.submit(() -> {
+            while (true) {
+                try {
+                    System.out.println(String.format("[LOG %s]: %s", Thread.currentThread().getName(), q.take()));
+                    double sample = dist.sample();
+                    Thread.sleep(Math.round(1_000 * sample));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+    }
 
     @Override
-    public synchronized void log(String s) {
+    public void log(String s) {
         try {
-            double sample = dist.sample();
-            Thread.sleep(Math.round(250 * sample));
-        } catch (Exception e) {
+            q.put(s);
+        } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        System.out.println(String.format("[LOG %s]: %s", Thread.currentThread().getName(), s));
     }
 
 }
