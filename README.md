@@ -10,6 +10,7 @@ podman build $VARIANT -f src/main/docker/Dockerfile.jvm -t quarkus-todo:latest
 podman-compose up # start services in Podman
 # TODO get JDP working so custom target isn't needed
 https --form POST :8181/api/v2/targets connectUrl=service:jmx:rmi:///jndi/rmi://quarkus-todo-backend:9999/jmxrmi alias=quarkus
+https --multipart :8181/api/v1/templates template@QuarkusTodoProfiling.jfc
 podman-compose down # stop and clean up services in Podman
 ```
 
