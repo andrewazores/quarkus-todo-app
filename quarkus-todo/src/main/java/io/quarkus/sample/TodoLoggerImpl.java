@@ -21,16 +21,14 @@ import io.quarkus.arc.Lock;
 @Singleton
 class TodoLoggerImpl implements TodoLogger {
 
-    private static final Path LOG_FILE = Path.of("var", "log", "todo.log");
+    private final Path logFile;
     private final BlockingQueue<String> q = new LinkedBlockingQueue<>(64);
     private final ExecutorService service = Executors.newSingleThreadExecutor();
     private final ReentrantLock flock = new ReentrantLock();
 
     TodoLoggerImpl() {
         try {
-            if (!Files.isRegularFile(LOG_FILE)) {
-                Files.createFile(LOG_FILE, PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-r--r--")));
-            }
+            this.logFile = Files.createTempFile(null, null, PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-r--r--")));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -56,7 +54,7 @@ class TodoLoggerImpl implements TodoLogger {
                     return;
                 }
                 System.out.println(logLine);
-                try (FileReader reader = new FileReader(LOG_FILE.toAbsolutePath().toFile())) {
+                try (FileReader reader = new FileReader(logFile.toAbsolutePath().toFile())) {
                     while (reader.ready()) {
                         char[] cbuf = new char[256];
                         int read = reader.read(cbuf);
@@ -67,7 +65,7 @@ class TodoLoggerImpl implements TodoLogger {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                try (FileOutputStream writer = new FileOutputStream(LOG_FILE.toAbsolutePath().toFile())) {
+                try (FileOutputStream writer = new FileOutputStream(logFile.toAbsolutePath().toFile())) {
                     for (byte b : sb.toString().getBytes()) {
                         writer.write(b);
                     }
