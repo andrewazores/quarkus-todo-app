@@ -10,6 +10,8 @@ services:
       POSTGRES_DB: rest-crud
 
   quarkus-todo-backend:
+    depends-on:
+      - quarkus-todo-db
     hostname: quarkus-todo
     image: 'quarkus-todo:latest'
     ports:
