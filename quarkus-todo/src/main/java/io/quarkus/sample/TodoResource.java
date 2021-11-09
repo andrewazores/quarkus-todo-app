@@ -70,6 +70,7 @@ public class TodoResource {
     public Todo getOne(@PathParam("id") Long id) {
         TodoResourceEvent evt = new TodoResourceEvent("GET", id);
         try {
+            evt.begin();
             Optional<Todo> entity = Todo.findByIdOptional(id);
             return entity.orElseThrow(() -> new WebApplicationException("Todo with id of " + id + " does not exist.", Status.NOT_FOUND));
         } finally {
@@ -84,6 +85,7 @@ public class TodoResource {
     public Response create(@Valid Todo item) {
         TodoResourceEvent evt = new TodoResourceEvent("POST");
         try {
+            evt.begin();
             logger.log("Creating TODO: " + item.title);
             boolean alreadyExists = false;
             for (Todo todo : Todo.<Todo>listAll()) {
@@ -111,6 +113,7 @@ public class TodoResource {
     public Response update(@Valid Todo todo, @PathParam("id") Long id) {
         TodoResourceEvent evt = new TodoResourceEvent("PATCH", id);
         try {
+            evt.begin();
             Todo entity = Todo.findById(id);
             entity.id = id;
             entity.completed = todo.completed;
@@ -130,6 +133,7 @@ public class TodoResource {
     public Response deleteCompleted() {
         TodoResourceEvent evt = new TodoResourceEvent("DELETE");
         try {
+            evt.begin();
             Todo.deleteCompleted();
             return Response.noContent().build();
         } finally {
@@ -145,6 +149,7 @@ public class TodoResource {
     public Response deleteOne(@PathParam("id") Long id) {
         TodoResourceEvent evt = new TodoResourceEvent("DELETE", id);
         try {
+            evt.begin();
             logger.log("Deleting ID: " + id);
             for (Todo todo : Todo.<Todo>listAll()) {
                 if (Objects.equals(id, todo.id)) {

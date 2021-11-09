@@ -1,43 +1,38 @@
 package io.quarkus.sample;
 
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.PosixFilePermissions;
+import java.util.Arrays;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.locks.ReentrantLock;
 
-import javax.enterprise.context.ApplicationScoped;
-
-import org.apache.commons.math3.distribution.BetaDistribution;
-import org.apache.commons.math3.distribution.RealDistribution;
+import javax.inject.Singleton;
 
 import io.quarkus.arc.Lock;
 
 @Lock
-@ApplicationScoped
+@Singleton
 class TodoLoggerImpl implements TodoLogger {
 
-    private static final int POOL_SIZE = 2;
-    private static final RealDistribution dist = new BetaDistribution(0.5, 0.5);
+    private static final Path LOG_FILE = Path.of("var", "log", "todo.log");
     private final BlockingQueue<String> q = new LinkedBlockingQueue<>(64);
-    private final ExecutorService service = Executors.newWorkStealingPool(POOL_SIZE);
-    private final ReentrantLock qlock = new ReentrantLock(true);
+    private final ExecutorService service = Executors.newSingleThreadExecutor();
+    private final ReentrantLock flock = new ReentrantLock();
 
     TodoLoggerImpl() {
-        for (int i = 0; i < POOL_SIZE; i++) {
-            this.service.submit(() -> {
-                while (true) {
-                    qlock.lock();
-                    try {
-                        System.out.println(String.format("[LOG %s]: %s", Thread.currentThread().getName(), q.take()));
-                        Thread.sleep(Math.round(250 * dist.sample()));
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    } finally {
-                        qlock.unlock();
-                    }
-                }
-            });
+        try {
+            if (!Files.isRegularFile(LOG_FILE)) {
+                Files.createFile(LOG_FILE, PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-r--r--")));
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -48,6 +43,50 @@ class TodoLoggerImpl implements TodoLogger {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+        // this is terrible on purpose
+        this.service.submit(() -> {
+            flock.lock();
+            try {
+                StringBuffer sb = new StringBuffer();
+                String logLine;
+                try {
+                    logLine = String.format("[LOG %s]: %s", Thread.currentThread().getName(), q.take());
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                    return;
+                }
+                System.out.println(logLine);
+                try (FileReader reader = new FileReader(LOG_FILE.toAbsolutePath().toFile())) {
+                    while (reader.ready()) {
+                        char[] cbuf = new char[256];
+                        int read = reader.read(cbuf);
+                        if (read >= 0) {
+                            sb.append(Arrays.copyOfRange(cbuf, 0, read));
+                        }
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                try (FileOutputStream writer = new FileOutputStream(LOG_FILE.toAbsolutePath().toFile())) {
+                    for (byte b : sb.toString().getBytes()) {
+                        writer.write(b);
+                    }
+                    for (byte b : System.getProperty("line.separator").getBytes()) {
+                        writer.write(b);
+                    }
+                    for (byte b : logLine.getBytes()) {
+                        writer.write(b);
+                    }
+                    for (byte b : System.getProperty("line.separator").getBytes()) {
+                        writer.write(b);
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            } finally {
+                flock.unlock();
+            }
+        });
     }
 
 }
