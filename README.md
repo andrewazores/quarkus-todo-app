@@ -2,6 +2,9 @@
 
 ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/cescoffier/quarkus-todo-app/Build)
 
+Quarkus-based Todo list application in a demo setup with Cryostat for monitoring
+and profiling.
+
 ## Build
 
 ```bash
@@ -33,4 +36,40 @@ mvn compile quarkus:dev
 
 ```java
 jbang SimulateLoad.java http://localhost:8080 10
+```
+
+## Run in OpenShift
+
+### Prerequisites
+
+Ensure that you have pushed the Todo app container image somewhere that your
+OpenShift cluster can pull from. For example:
+
+```bash
+podman login quay.io
+podman tag quarkus-todo:latest quay.io/myquayusername/quarkus-todo:latest
+podman push quay.io/myquayusername/quarkus-todo:latest
+```
+
+Install Cryostat in your intended OpenShift project namespace using the Cryostat
+Operator. Search for 'Cryostat' in the OperatorHub UI of your OpenShift admin
+console, or visit:
+https://cryostat.io/get-started/#installing-cryostat-operator .
+
+### Deploy
+
+```bash
+# if postgres crash loops it probably is failing to chmod its data dir. temporary hackaround:
+# oc adm policy add-scc-to-user anyuid -n $(oc project -q) -z default
+oc new-app docker.io/library/postgres:13.1 POSTGRES_USER=restcrud POSTGRES_PASSWORD=restcrud POSTGRES_DB=rest-crud --name=quarkus-todo-db
+oc new-app quay.io/andrewazores/quarkus-todo:latest
+oc patch svc/quarkus-todo -p '{"spec":{"$setElementOrder/ports":[{"port":8080},{"port":9999}],"ports":[{"name":"jfr-jmx","port":9999}]}}'
+oc expose --port 8080 svc quarkus-todo
+```
+
+### Undeploy
+
+```bash
+oc delete all -l app=quarkus-todo
+$oc delete all -l app=quarkus-todo-db
 ```
