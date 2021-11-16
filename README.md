@@ -2,11 +2,16 @@
 
 ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/cescoffier/quarkus-todo-app/Build)
 
-## Build and Run
+## Build
 
 ```bash
 ./mvnw package
-podman build $VARIANT -f src/main/docker/Dockerfile.jvm -t quarkus-todo:latest
+podman build . -t quarkus-todo:latest
+```
+
+## Run with Podman Compose
+
+```bash
 podman-compose up # start services in Podman
 # TODO get JDP working so custom target isn't needed
 https --form POST :8181/api/v2/targets connectUrl=service:jmx:rmi:///jndi/rmi://quarkus-todo-backend:9999/jmxrmi alias=quarkus
@@ -14,13 +19,8 @@ https --multipart :8181/api/v1/templates template@QuarkusTodoProfiling.jfc
 podman-compose down # stop and clean up services in Podman
 ```
 
-Where `$VARIANT` is `quarkus-todo` or `quarkus-todo-reactive`.
 
-```java
-jbang SimulateLoad.java http://localhost:8080 10
-```
-
-## Imperative Application
+## Run in Dev mode
 
 ```bash
 podman-compose -f database-compose.yml run --rm quarkus-todo-db
@@ -29,18 +29,8 @@ cd quarkus-todo
 mvn compile quarkus:dev
 ```
 
-Open: http://localhost:8080/
+## Simulate Load
 
-## Reactive Application
-
-This version uses Hibernate Reactive, RESTEasy Reactive and Mutiny.
-
-```bash
-podman-compose -f database-compose.yml run --rm quarkus-todo-db
-# in another terminal
-cd quarkus-todo-reactive
-mvn compile quarkus:dev
+```java
+jbang SimulateLoad.java http://localhost:8080 10
 ```
-
-Open: http://localhost:8080/
-

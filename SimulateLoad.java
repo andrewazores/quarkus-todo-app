@@ -71,10 +71,16 @@ public class SimulateLoad {
                         .POST(BodyPublishers.ofString(body))
                         .build();
         HttpResponse<String> response = http.send(req, BodyHandlers.ofString());
-        Map<String, String> result =
-                gson.fromJson(response.body(), new TypeToken<Map<String, String>>() {}.getType());
-        synchronized (ids) {
-            ids.offer(Integer.parseInt(result.get("id")));
+        String responseBody = response.body();
+        try {
+            Map<String, String> result =
+                    gson.fromJson(responseBody, new TypeToken<Map<String, String>>() {}.getType());
+            synchronized (ids) {
+                ids.offer(Integer.parseInt(result.get("id")));
+            }
+        } catch (Exception e) {
+            System.out.println(responseBody);
+            e.printStackTrace();
         }
     }
 
